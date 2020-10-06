@@ -140,6 +140,7 @@ func TestConfig_Merge(t *testing.T) {
 			MaxHeartbeatsPerSecond: 30.0,
 			RedundancyZone:         "foo",
 			UpgradeVersion:         "foo",
+			EnableEventPublisher:   helper.BoolToPtr(false),
 		},
 		ACL: &ACLConfig{
 			Enabled:          true,
@@ -332,6 +333,7 @@ func TestConfig_Merge(t *testing.T) {
 			NonVotingServer:        true,
 			RedundancyZone:         "bar",
 			UpgradeVersion:         "bar",
+			EnableEventPublisher:   helper.BoolToPtr(true),
 		},
 		ACL: &ACLConfig{
 			Enabled:          true,
@@ -1166,4 +1168,42 @@ func TestTelemetry_Parse(t *testing.T) {
 	require.False(*config.Telemetry.FilterDefault)
 	require.Exactly([]string{"+nomad.raft"}, config.Telemetry.PrefixFilter)
 	require.True(config.Telemetry.DisableDispatchedJobSummaryMetrics)
+}
+
+func TestEventPublisher_Parse(t *testing.T) {
+
+	require := require.New(t)
+
+	{
+		a := &ServerConfig{
+			EnableEventPublisher: helper.BoolToPtr(false),
+		}
+		b := DefaultConfig().Server
+		b.EnableEventPublisher = nil
+
+		result := a.Merge(b)
+		require.Equal(false, *result.EnableEventPublisher)
+	}
+
+	{
+		a := &ServerConfig{
+			EnableEventPublisher: helper.BoolToPtr(true),
+		}
+		b := DefaultConfig().Server
+		b.EnableEventPublisher = nil
+
+		result := a.Merge(b)
+		require.Equal(true, *result.EnableEventPublisher)
+	}
+
+	{
+		a := &ServerConfig{
+			EnableEventPublisher: helper.BoolToPtr(false),
+		}
+		b := DefaultConfig().Server
+		b.EnableEventPublisher = helper.BoolToPtr(true)
+
+		result := a.Merge(b)
+		require.Equal(true, *result.EnableEventPublisher)
+	}
 }
