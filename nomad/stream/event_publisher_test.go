@@ -10,7 +10,7 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
-func TestEventPublisher_PublishChangesAndSubscribe(t *testing.T) {
+func TestEventBroker_PublishChangesAndSubscribe(t *testing.T) {
 	subscription := &SubscribeRequest{
 		Topics: map[structs.Topic][]string{
 			"Test": []string{"sub-key"},
@@ -19,7 +19,7 @@ func TestEventPublisher_PublishChangesAndSubscribe(t *testing.T) {
 	ctx, cancel := context.WithTimeout(context.Background(), 2*time.Second)
 	defer cancel()
 
-	publisher := NewEventPublisher(ctx, EventPublisherCfg{EventBufferSize: 100, EventBufferTTL: DefaultTTL})
+	publisher := NewEventBroker(ctx, EventBrokerCfg{EventBufferSize: 100, EventBufferTTL: DefaultTTL})
 	sub, err := publisher.Subscribe(subscription)
 	require.NoError(t, err)
 	eventCh := consumeSubscription(ctx, sub)
@@ -59,11 +59,11 @@ func TestEventPublisher_PublishChangesAndSubscribe(t *testing.T) {
 	require.Equal(t, expected, result.Events)
 }
 
-func TestEventPublisher_ShutdownClosesSubscriptions(t *testing.T) {
+func TestEventBroker_ShutdownClosesSubscriptions(t *testing.T) {
 	ctx, cancel := context.WithCancel(context.Background())
 	t.Cleanup(cancel)
 
-	publisher := NewEventPublisher(ctx, EventPublisherCfg{})
+	publisher := NewEventBroker(ctx, EventBrokerCfg{})
 
 	sub1, err := publisher.Subscribe(&SubscribeRequest{})
 	require.NoError(t, err)

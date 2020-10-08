@@ -166,7 +166,7 @@ func TestNodeEventsFromChanges(t *testing.T) {
 	for _, tc := range cases {
 		t.Run(tc.Name, func(t *testing.T) {
 			s := TestStateStoreCfg(t, TestStateStorePublisher(t))
-			defer s.StopEventPublisher()
+			defer s.StopEventBroker()
 
 			if tc.Setup != nil {
 				// Bypass publish mechanism for setup
@@ -215,7 +215,7 @@ func TestNodeEventsFromChanges(t *testing.T) {
 func TestNodeDrainEventFromChanges(t *testing.T) {
 	t.Parallel()
 	s := TestStateStoreCfg(t, TestStateStorePublisher(t))
-	defer s.StopEventPublisher()
+	defer s.StopEventBroker()
 
 	// setup
 	setupTx := s.db.WriteTxn(10)
@@ -294,10 +294,6 @@ type nodeOpts func(n *structs.Node)
 
 func nodeNotReady(n *structs.Node) {
 	n.Status = structs.NodeStatusInit
-}
-
-func nodeReady(n *structs.Node) {
-	n.Status = structs.NodeStatusReady
 }
 
 func nodeIDTwo(n *structs.Node) {

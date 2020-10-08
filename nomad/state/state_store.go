@@ -77,7 +77,7 @@ type StateStore struct {
 
 	// TODO: refactor abondonCh to use a context so that both can use the same
 	// cancel mechanism.
-	stopEventPublisher func()
+	stopEventBroker func()
 }
 
 // NewStateStore is used to create a new state store
@@ -91,27 +91,23 @@ func NewStateStore(config *StateStoreConfig) (*StateStore, error) {
 	// Create the state store
 	ctx, cancel := context.WithCancel(context.TODO())
 	s := &StateStore{
-		logger:             config.Logger.Named("state_store"),
-		config:             config,
-		abandonCh:          make(chan struct{}),
-		stopEventPublisher: cancel,
+		logger:          config.Logger.Named("state_store"),
+		config:          config,
+		abandonCh:       make(chan struct{}),
+		stopEventBroker: cancel,
 	}
 
 	if config.EnablePublisher {
-		cfg := &ChangeConfig{
-			DurableEventCount: config.DurableEventCount,
-		}
-
 		// Create new event publisher using provided config
-		publisher := stream.NewEventPublisher(ctx, stream.EventPublisherCfg{
+		broker := stream.NewEventBroker(ctx, stream.EventBrokerCfg{
 			EventBufferTTL:  1 * time.Hour,
 			EventBufferSize: config.EventBufferSize,
 			Logger:          config.Logger,
-			OnEvict:         s.eventPublisherEvict,
+			OnEvict:         s.eventBrokerEvict,
 		})
-		s.db = NewChangeTrackerDB(db, publisher, processDBChanges, cfg)
+		s.db = NewChangeTrackerDB(db, broker, processDBChanges, config.DurableEventCount)
 	} else {
-		s.db = NewChangeTrackerDB(db, nil, noOpProcessChanges, nil)
+		s.db = NewChangeTrackerDB(db, nil, noOpProcessChanges, 0)
 	}
 
 	// Initialize the state store with required enterprise objects
@@ -122,16 +118,16 @@ func NewStateStore(config *StateStoreConfig) (*StateStore, error) {
 	return s, nil
 }
 
-func (s *StateStore) EventPublisher() (*stream.EventPublisher, error) {
+func (s *StateStore) EventBroker() (*stream.EventBroker, error) {
 	if s.db.publisher == nil {
-		return nil, fmt.Errorf("EventPublisher not configured")
+		return nil, fmt.Errorf("EventBroker not configured")
 	}
 	return s.db.publisher, nil
 }
 
-// eventPublisherEvict is used as a callback to delete an evicted events
+// eventBrokerEvict is used as a callback to delete an evicted events
 // entry from go-memdb.
-func (s *StateStore) eventPublisherEvict(events *structs.Events) {
+func (s *StateStore) eventBrokerEvict(events *structs.Events) {
 	if err := s.deleteEvent(events); err != nil {
 		if err == memdb.ErrNotFound {
 			s.logger.Info("Evicted event was not found in go-memdb table", "event index", events.Index)
@@ -170,7 +166,7 @@ func (s *StateStore) Snapshot() (*StateSnapshot, error) {
 	}
 
 	// Create a new change tracker DB that does not publish or track changes
-	store.db = NewChangeTrackerDB(memDBSnap, nil, noOpProcessChanges, nil)
+	store.db = NewChangeTrackerDB(memDBSnap, nil, noOpProcessChanges, 0)
 
 	snap := &StateSnapshot{
 		StateStore: store,
@@ -253,14 +249,14 @@ func (s *StateStore) AbandonCh() <-chan struct{} {
 // Abandon is used to signal that the given state store has been abandoned.
 // Calling this more than one time will panic.
 func (s *StateStore) Abandon() {
-	s.StopEventPublisher()
+	s.StopEventBroker()
 	close(s.abandonCh)
 }
 
-// StopStopEventPublisher calls the cancel func for the state stores event
+// StopStopEventBroker calls the cancel func for the state stores event
 // publisher. It should be called during server shutdown.
-func (s *StateStore) StopEventPublisher() {
-	s.stopEventPublisher()
+func (s *StateStore) StopEventBroker() {
+	s.stopEventBroker()
 }
 
 // QueryFn is the definition of a function that can be used to implement a basic
@@ -790,6 +786,7 @@ func (s *StateStore) ScalingEventsByJob(ws memdb.WatchSet, namespace, jobID stri
 // UpsertNodeMsgType is used to register a node or update a node definition
 // This is assumed to be triggered by the client, so we retain the value
 // of drain/eligibility which is set by the scheduler.
+// TODO(drew) remove this and update all test callers of UpsertNode to use msgType
 func (s *StateStore) UpsertNodeMsgType(msgType structs.MessageType, index uint64, node *structs.Node) error {
 	txn := s.db.WriteTxnMsgT(msgType, index)
 	defer txn.Abort()
@@ -972,7 +969,7 @@ func (s *StateStore) updateNodeStatusTxn(txn *txn, nodeID, status string, update
 
 // BatchUpdateNodeDrain is used to update the drain of a node set of nodes
 func (s *StateStore) BatchUpdateNodeDrain(msgType structs.MessageType, index uint64, updatedAt int64, updates map[string]*structs.DrainUpdate, events map[string]*structs.NodeEvent) error {
-	txn := s.db.WriteTxn(index)
+	txn := s.db.WriteTxnMsgT(msgType, index)
 	defer txn.Abort()
 	for node, update := range updates {
 		if err := s.updateNodeDrainImpl(txn, index, node, update.DrainStrategy, update.MarkEligible, updatedAt, events[node]); err != nil {

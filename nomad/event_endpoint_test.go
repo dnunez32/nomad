@@ -23,7 +23,7 @@ func TestEventStream(t *testing.T) {
 	t.Parallel()
 
 	s1, cleanupS1 := TestServer(t, func(c *Config) {
-		c.EnableEventPublisher = true
+		c.EnableEventBroker = true
 	})
 	defer cleanupS1()
 
@@ -65,7 +65,7 @@ func TestEventStream(t *testing.T) {
 	}()
 
 	// retrieve publisher for server, send event
-	publisher, err := s1.State().EventPublisher()
+	publisher, err := s1.State().EventBroker()
 	require.NoError(t, err)
 
 	node := mock.Node()
@@ -75,7 +75,12 @@ func TestEventStream(t *testing.T) {
 	encoder := codec.NewEncoder(p1, structs.MsgpackHandle)
 	require.Nil(t, encoder.Encode(req))
 
+	publisher.Publish(&structs.Events{Index: uint64(2), Events: []structs.Event{{Topic: "test", Payload: node}}})
+	publisher.Publish(&structs.Events{Index: uint64(3), Events: []structs.Event{{Topic: "test", Payload: node}}})
+
 	timeout := time.After(3 * time.Second)
+	got := 0
+	want := 3
 OUTER:
 	for {
 		select {
@@ -107,7 +112,11 @@ OUTER:
 			dec.Decode(event.Events[0].Payload)
 			require.NoError(t, err)
 			require.Equal(t, node.ID, out.ID)
-			break OUTER
+
+			got++
+			if got == want {
+				break OUTER
+			}
 		}
 	}
 }
@@ -118,7 +127,7 @@ func TestEventStream_StreamErr(t *testing.T) {
 	t.Parallel()
 
 	s1, cleanupS1 := TestServer(t, func(c *Config) {
-		c.EnableEventPublisher = true
+		c.EnableEventBroker = true
 	})
 	defer cleanupS1()
 
@@ -158,7 +167,7 @@ func TestEventStream_StreamErr(t *testing.T) {
 		}
 	}()
 
-	publisher, err := s1.State().EventPublisher()
+	publisher, err := s1.State().EventBroker()
 	require.NoError(t, err)
 
 	node := mock.Node()
@@ -200,12 +209,12 @@ func TestEventStream_RegionForward(t *testing.T) {
 	t.Parallel()
 
 	s1, cleanupS1 := TestServer(t, func(c *Config) {
-		c.EnableEventPublisher = true
+		c.EnableEventBroker = true
 	})
 	defer cleanupS1()
 
 	s2, cleanupS2 := TestServer(t, func(c *Config) {
-		c.EnableEventPublisher = true
+		c.EnableEventBroker = true
 		c.Region = "foo"
 	})
 	defer cleanupS2()
@@ -249,7 +258,7 @@ func TestEventStream_RegionForward(t *testing.T) {
 	}()
 
 	// publish with server 2
-	publisher, err := s2.State().EventPublisher()
+	publisher, err := s2.State().EventBroker()
 	require.NoError(t, err)
 
 	node := mock.Node()
@@ -372,7 +381,7 @@ func TestEventStream_ACL(t *testing.T) {
 			encoder := codec.NewEncoder(p1, structs.MsgpackHandle)
 			require.Nil(encoder.Encode(req))
 
-			publisher, err := s.State().EventPublisher()
+			publisher, err := s.State().EventBroker()
 			require.NoError(err)
 
 			// publish some events

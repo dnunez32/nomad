@@ -11,18 +11,13 @@ const (
 	TopicEval       structs.Topic = "Eval"
 	TopicAlloc      structs.Topic = "Alloc"
 	TopicJob        structs.Topic = "Job"
-	// TopicNodeRegistration   stream.Topic = "NodeRegistration"
-	// TopicNodeDeregistration stream.Topic = "NodeDeregistration"
-	// TopicNodeDrain          stream.Topic = "NodeDrain"
-	TopicNode structs.Topic = "Node"
+	TopicNode       structs.Topic = "Node"
 
-	// TODO(drew) Node Events use TopicNode + Type
-	TypeNodeRegistration      = "NodeRegistration"
-	TypeNodeDeregistration    = "NodeDeregistration"
-	TypeNodeEligibilityUpdate = "NodeEligibility"
-	TypeNodeDrain             = "NodeDrain"
-	TypeNodeEvent             = "NodeEvent"
-
+	TypeNodeRegistration         = "NodeRegistration"
+	TypeNodeDeregistration       = "NodeDeregistration"
+	TypeNodeEligibilityUpdate    = "NodeEligibility"
+	TypeNodeDrain                = "NodeDrain"
+	TypeNodeEvent                = "NodeEvent"
 	TypeDeploymentUpdate         = "DeploymentStatusUpdate"
 	TypeDeploymentPromotion      = "DeploymentPromotion"
 	TypeDeploymentAllocHealth    = "DeploymentAllocHealth"
@@ -36,22 +31,28 @@ const (
 	TypePlanResult               = "PlanResult"
 )
 
+// JobEvent holds a newly updated Job.
 type JobEvent struct {
 	Job *structs.Job
 }
 
+// EvalEvent holds a newly updated Eval.
 type EvalEvent struct {
 	Eval *structs.Evaluation
 }
 
+// AllocEvent holds a newly updated Allocation. The
+// Allocs embedded Job has been removed to reduce size.
 type AllocEvent struct {
 	Alloc *structs.Allocation
 }
 
+// DeploymentEvent holds a newly updated Deployment.
 type DeploymentEvent struct {
 	Deployment *structs.Deployment
 }
 
+// NodeEvent holds a newly updated Node
 type NodeEvent struct {
 	Node *structs.Node
 }
@@ -74,6 +75,8 @@ type JobDrainDetails struct {
 	AllocDetails map[string]NodeDrainAllocDetails
 }
 
+// GenericEventsFromChanges returns a set of events for a given set of
+// transaction changes. It currently ignores Delete operations.
 func GenericEventsFromChanges(tx ReadTxn, changes Changes) (*structs.Events, error) {
 	var eventType string
 	switch changes.MsgType {
@@ -149,15 +152,22 @@ func GenericEventsFromChanges(tx ReadTxn, changes Changes) (*structs.Events, err
 			}
 
 			alloc := after.Copy()
+
+			filterKeys := []string{
+				alloc.JobID,
+				alloc.DeploymentID,
+			}
+
 			// remove job info to help keep size of alloc event down
 			alloc.Job = nil
 
 			event := structs.Event{
-				Topic:     TopicAlloc,
-				Type:      eventType,
-				Index:     changes.Index,
-				Key:       after.ID,
-				Namespace: after.Namespace,
+				Topic:      TopicAlloc,
+				Type:       eventType,
+				Index:      changes.Index,
+				Key:        after.ID,
+				FilterKeys: filterKeys,
+				Namespace:  after.Namespace,
 				Payload: &AllocEvent{
 					Alloc: alloc,
 				},
@@ -174,7 +184,7 @@ func GenericEventsFromChanges(tx ReadTxn, changes Changes) (*structs.Events, err
 			}
 
 			event := structs.Event{
-				Topic:     TopicAlloc,
+				Topic:     TopicJob,
 				Type:      eventType,
 				Index:     changes.Index,
 				Key:       after.ID,
@@ -214,7 +224,7 @@ func GenericEventsFromChanges(tx ReadTxn, changes Changes) (*structs.Events, err
 			}
 
 			event := structs.Event{
-				Topic:      TopicNode,
+				Topic:      TopicDeployment,
 				Type:       eventType,
 				Index:      changes.Index,
 				Key:        after.ID,

@@ -37,7 +37,7 @@ func TestEventStream(t *testing.T) {
 			assert.NoError(t, err)
 		}()
 
-		pub, err := s.Agent.server.State().EventPublisher()
+		pub, err := s.Agent.server.State().EventBroker()
 		require.NoError(t, err)
 		pub.Publish(&structs.Events{Index: 100, Events: []structs.Event{{Payload: testEvent{ID: "123"}}}})
 
@@ -82,7 +82,7 @@ func TestEventStream_NamespaceQuery(t *testing.T) {
 			assert.NoError(t, err)
 		}()
 
-		pub, err := s.Agent.server.State().EventPublisher()
+		pub, err := s.Agent.server.State().EventBroker()
 		require.NoError(t, err)
 
 		pub.Publish(&structs.Events{Index: 100, Events: []structs.Event{{Namespace: "bar", Payload: testEvent{ID: "123"}}}})

@@ -34,10 +34,20 @@ func TestNDJson(t *testing.T) {
 
 	require.Equal(t, expected.Bytes(), out1.Data)
 	select {
-	case _ = <-out:
-		t.Fatalf("Did not expect another message")
+	case msg := <-out:
+		require.Failf(t, "Did not expect another message", "%#v", msg)
 	case <-time.After(100 * time.Millisecond):
 	}
+
+	require.NoError(t, s.Send(testObj{Name: "test2"}))
+
+	out2 := <-out
+	expected.Reset()
+
+	expected.Write([]byte(`{"name":"test2"}`))
+	expected.Write([]byte("\n"))
+	require.Equal(t, expected.Bytes(), out2.Data)
+
 }
 
 func TestNDJson_Send_After_Stop(t *testing.T) {

@@ -69,7 +69,7 @@ func (e *Event) stream(conn io.ReadWriteCloser) {
 		Index:     uint64(args.Index),
 		Namespace: args.Namespace,
 	}
-	publisher, err := e.srv.State().EventPublisher()
+	publisher, err := e.srv.State().EventBroker()
 	if err != nil {
 		handleJsonResultError(err, helper.Int64ToPtr(500), encoder)
 		return
@@ -94,14 +94,19 @@ func (e *Event) stream(conn io.ReadWriteCloser) {
 
 	// goroutine to detect remote side closing
 	go func() {
-		if _, err := conn.Read(nil); err != nil {
-			// One end of the pipe explicitly closed, exit
-			cancel()
-			return
-		}
-		select {
-		case <-ctx.Done():
-			return
+		for {
+			if _, err := conn.Read(nil); err != nil {
+				if err == io.EOF || err == io.ErrClosedPipe {
+					// One end of the pipe was explicitly closed, exit cleanly
+					cancel()
+					return
+				}
+				select {
+				case errCh <- err:
+				case <-ctx.Done():
+					return
+				}
+			}
 		}
 	}()
 

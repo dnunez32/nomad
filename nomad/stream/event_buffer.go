@@ -77,7 +77,7 @@ func newEventBuffer(size int64, maxItemTTL time.Duration, onEvict EvictCallbackF
 // watchers. After calling append, the caller must not make any further
 // mutations to the events as they may have been exposed to subscribers in other
 // goroutines. Append only supports a single concurrent caller and must be
-// externally synchronized with other Append, or prune calls.
+// externally synchronized with other Append calls.
 func (b *eventBuffer) Append(events *structs.Events) {
 	b.appendItem(newBufferItem(events))
 }
