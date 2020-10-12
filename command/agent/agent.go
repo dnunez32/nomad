@@ -246,6 +246,9 @@ func convertServerConfig(agentConfig *Config) (*nomad.Config, error) {
 	if agentConfig.Server.EventBufferSize > 0 {
 		conf.EventBufferSize = int64(agentConfig.Server.EventBufferSize)
 	}
+	if agentConfig.Server.DurableEventCount > 0 {
+		conf.DurableEventCount = int64(agentConfig.Server.DurableEventCount)
+	}
 	if agentConfig.Autopilot != nil {
 		if agentConfig.Autopilot.CleanupDeadServers != nil {
 			conf.AutopilotConfig.CleanupDeadServers = *agentConfig.Autopilot.CleanupDeadServers

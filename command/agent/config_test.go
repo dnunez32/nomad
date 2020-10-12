@@ -141,6 +141,7 @@ func TestConfig_Merge(t *testing.T) {
 			RedundancyZone:         "foo",
 			UpgradeVersion:         "foo",
 			EnableEventBroker:      helper.BoolToPtr(false),
+			DurableEventCount:      0,
 		},
 		ACL: &ACLConfig{
 			Enabled:          true,

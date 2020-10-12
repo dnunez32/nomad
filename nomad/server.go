@@ -1217,6 +1217,7 @@ func (s *Server) setupRaft() error {
 		Logger:            s.logger,
 		Region:            s.Region(),
 		EnableEventBroker: s.config.EnableEventBroker,
+		DurableEventCount: s.config.DurableEventCount,
 		EventBufferSize:   s.config.EventBufferSize,
 	}
 	var err error

@@ -54,7 +54,7 @@ type StateStoreConfig struct {
 
 	// DurableEventCount is used to determine if events from transaction changes
 	// should be saved in go-memdb
-	DurableEventCount int
+	DurableEventCount int64
 }
 
 // The StateStore is responsible for maintaining all the Nomad

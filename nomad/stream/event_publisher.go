@@ -111,7 +111,7 @@ func (e *EventBroker) Subscribe(req *SubscribeRequest) (*Subscription, error) {
 	}
 	if offset > 0 && req.StartExactlyAtIndex {
 		return nil, fmt.Errorf("requested index not in buffer")
-	} else {
+	} else if offset > 0 {
 		e.logger.Debug("requested index no longer in buffer", "requsted", int(req.Index), "closest", int(head.Events.Index))
 	}
 

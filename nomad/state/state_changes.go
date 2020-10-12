@@ -30,12 +30,12 @@ type Changes struct {
 // sent to the EventBroker which will create and emit change events.
 type changeTrackerDB struct {
 	db             *memdb.MemDB
-	durableCount   int
+	durableCount   int64
 	publisher      *stream.EventBroker
 	processChanges func(ReadTxn, Changes) (*structs.Events, error)
 }
 
-func NewChangeTrackerDB(db *memdb.MemDB, publisher *stream.EventBroker, changesFn changeProcessor, durableCount int) *changeTrackerDB {
+func NewChangeTrackerDB(db *memdb.MemDB, publisher *stream.EventBroker, changesFn changeProcessor, durableCount int64) *changeTrackerDB {
 	return &changeTrackerDB{
 		db:             db,
 		publisher:      publisher,
