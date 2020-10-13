@@ -69,45 +69,30 @@ type JobDrainDetails struct {
 	AllocDetails map[string]NodeDrainAllocDetails
 }
 
+var MsgTypeEvents = map[structs.MessageType]string{
+	structs.NodeRegisterRequestType:                 TypeNodeRegistration,
+	structs.UpsertNodeEventsType:                    TypeNodeEvent,
+	structs.EvalUpdateRequestType:                   TypeEvalUpdated,
+	structs.AllocClientUpdateRequestType:            TypeAllocUpdated,
+	structs.JobRegisterRequestType:                  TypeJobRegistered,
+	structs.AllocUpdateRequestType:                  TypeAllocUpdated,
+	structs.NodeUpdateStatusRequestType:             TypeNodeEvent,
+	structs.JobDeregisterRequestType:                TypeJobDeregistered,
+	structs.JobBatchDeregisterRequestType:           TypeJobBatchDeregistered,
+	structs.AllocUpdateDesiredTransitionRequestType: TypeAllocUpdateDesiredStatus,
+	structs.NodeUpdateEligibilityRequestType:        TypeNodeDrain,
+	structs.BatchNodeUpdateDrainRequestType:         TypeNodeDrain,
+	structs.DeploymentStatusUpdateRequestType:       TypeDeploymentUpdate,
+	structs.DeploymentPromoteRequestType:            TypeDeploymentPromotion,
+	structs.DeploymentAllocHealthRequestType:        TypeDeploymentAllocHealth,
+	structs.ApplyPlanResultsRequestType:             TypePlanResult,
+}
+
 // GenericEventsFromChanges returns a set of events for a given set of
 // transaction changes. It currently ignores Delete operations.
 func GenericEventsFromChanges(tx ReadTxn, changes Changes) (*structs.Events, error) {
-	var eventType string
-	switch changes.MsgType {
-	case structs.NodeRegisterRequestType:
-		eventType = TypeNodeRegistration
-	case structs.UpsertNodeEventsType:
-		eventType = TypeNodeEvent
-	case structs.EvalUpdateRequestType:
-		eventType = TypeEvalUpdated
-	case structs.AllocClientUpdateRequestType:
-		eventType = TypeAllocUpdated
-	case structs.JobRegisterRequestType:
-		eventType = TypeJobRegistered
-	case structs.AllocUpdateRequestType:
-		eventType = TypeAllocUpdated
-	case structs.NodeUpdateStatusRequestType:
-		eventType = TypeNodeEvent
-	case structs.JobDeregisterRequestType:
-		eventType = TypeJobDeregistered
-	case structs.JobBatchDeregisterRequestType:
-		eventType = TypeJobBatchDeregistered
-	case structs.AllocUpdateDesiredTransitionRequestType:
-		eventType = TypeAllocUpdateDesiredStatus
-	case structs.NodeUpdateEligibilityRequestType:
-		eventType = TypeNodeDrain
-	case structs.BatchNodeUpdateDrainRequestType:
-		eventType = TypeNodeDrain
-	case structs.DeploymentStatusUpdateRequestType:
-		eventType = TypeDeploymentUpdate
-	case structs.DeploymentPromoteRequestType:
-		eventType = TypeDeploymentPromotion
-	case structs.DeploymentAllocHealthRequestType:
-		eventType = TypeDeploymentAllocHealth
-	case structs.ApplyPlanResultsRequestType:
-		eventType = TypePlanResult
-	default:
-		// unknown request type
+	eventType, ok := MsgTypeEvents[changes.MsgType]
+	if !ok {
 		return nil, nil
 	}
 
