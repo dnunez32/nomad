@@ -24,7 +24,6 @@ func TestEventStream(t *testing.T) {
 
 	s1, cleanupS1 := TestServer(t, func(c *Config) {
 		c.EnableEventBroker = true
-		c.EnableDebug = true
 	})
 	defer cleanupS1()
 
@@ -129,7 +128,6 @@ func TestEventStream_StreamErr(t *testing.T) {
 
 	s1, cleanupS1 := TestServer(t, func(c *Config) {
 		c.EnableEventBroker = true
-		c.EnableDebug = true
 	})
 	defer cleanupS1()
 

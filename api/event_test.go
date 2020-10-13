@@ -5,16 +5,13 @@ import (
 	"testing"
 	"time"
 
-	"github.com/hashicorp/nomad/api/internal/testutil"
 	"github.com/stretchr/testify/require"
 )
 
 func TestEvent_Stream(t *testing.T) {
 	t.Parallel()
 
-	c, s := makeClient(t, nil, func(c *testutil.TestServerConfig) {
-		c.DevMode = true
-	})
+	c, s := makeClient(t, nil, nil)
 	defer s.Stop()
 
 	// register job to generate events
@@ -52,9 +49,7 @@ func TestEvent_Stream(t *testing.T) {
 func TestEvent_Stream_Err_InvalidQueryParam(t *testing.T) {
 	t.Parallel()
 
-	c, s := makeClient(t, nil, func(c *testutil.TestServerConfig) {
-		c.DevMode = true
-	})
+	c, s := makeClient(t, nil, nil)
 	defer s.Stop()
 
 	// register job to generate events
@@ -83,9 +78,7 @@ func TestEvent_Stream_Err_InvalidQueryParam(t *testing.T) {
 func TestEvent_Stream_CloseCtx(t *testing.T) {
 	t.Parallel()
 
-	c, s := makeClient(t, nil, func(c *testutil.TestServerConfig) {
-		c.DevMode = true
-	})
+	c, s := makeClient(t, nil, nil)
 	defer s.Stop()
 
 	// register job to generate events

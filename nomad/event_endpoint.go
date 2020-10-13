@@ -48,11 +48,6 @@ func (e *Event) stream(conn io.ReadWriteCloser) {
 		handleJsonResultError(err, nil, encoder)
 		return
 	}
-	// If ACLs are disabled, EnableDebug must be enabled
-	if aclObj == nil && !e.srv.config.EnableDebug {
-		handleJsonResultError(structs.ErrPermissionDenied, helper.Int64ToPtr(403), encoder)
-		return
-	}
 
 	// authToken is passed to the subscribe request so the event stream
 	// can handle closing a subscription if the authToken expires.
