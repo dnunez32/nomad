@@ -108,6 +108,9 @@ func (s *HTTPServer) EventStream(resp http.ResponseWriter, req *http.Request) (i
 			if _, err := io.Copy(output, bytes.NewReader(res.Event.Data)); err != nil {
 				return CodedError(500, err.Error())
 			}
+			// Each entry is its own new line according to ndjson.org
+			// append new line to each entry
+			fmt.Fprint(output, "\n")
 		}
 	})
 

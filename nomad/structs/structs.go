@@ -10714,7 +10714,7 @@ type EventStreamRequest struct {
 
 type EventStreamWrapper struct {
 	Error *RpcError
-	Event *NDJson
+	Event *EventJson
 }
 
 // RpcError is used for serializing errors with a potential error code
@@ -10777,13 +10777,13 @@ type Events struct {
 	Events []Event
 }
 
-// NNDJson is a wrapper for a Newline Delimited JSON object
-type NDJson struct {
+// EventJson is a wrapper for a JSON object
+type EventJson struct {
 	Data []byte
 }
 
-func (j *NDJson) Copy() *NDJson {
-	n := new(NDJson)
+func (j *EventJson) Copy() *EventJson {
+	n := new(EventJson)
 	*n = *j
 	n.Data = make([]byte, len(j.Data))
 	copy(n.Data, j.Data)

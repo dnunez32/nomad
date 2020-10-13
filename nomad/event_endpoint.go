@@ -95,11 +95,9 @@ func (e *Event) stream(conn io.ReadWriteCloser) {
 	}
 	defer subscription.Unsubscribe()
 
-	ndJsonCh := make(chan *structs.NDJson)
 	errCh := make(chan error)
 
-	jsonStream := stream.NewNDJsonStream(ndJsonCh, 30*time.Second)
-	jsonStream.Run(ctx)
+	jsonStream := stream.NewJsonStream(ctx, 30*time.Second)
 
 	// goroutine to detect remote side closing
 	go func() {
@@ -154,7 +152,7 @@ OUTER:
 			break OUTER
 		case <-ctx.Done():
 			break OUTER
-		case eventJSON, ok := <-ndJsonCh:
+		case eventJSON, ok := <-jsonStream.OutCh():
 			// check if ndjson may have been closed when an error occurred,
 			// check once more for an error.
 			if !ok {

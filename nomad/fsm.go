@@ -1603,7 +1603,7 @@ func rehydratePublisherFromState(s *state.StateStore, l hclog.Logger) error {
 		count++
 	}
 
-	l.Debug("Finished hydrating event broker from snapshot", "events", count)
+	l.Debug("finished hydrating event broker from snapshot", "events", count)
 	return nil
 }
 
@@ -2409,14 +2409,12 @@ func (s *nomadSnapshot) persistEvents(sink raft.SnapshotSink, encoder *codec.Enc
 		// Prepare the request struct
 		event := raw.(*structs.Events)
 
-		eventCount := len(event.Events)
-
 		// Write out a volume snapshot
 		sink.Write([]byte{byte(EventSnapshot)})
 		if err := encoder.Encode(event); err != nil {
 			return err
 		}
-		count += int64(eventCount)
+		count += int64(len(event.Events))
 
 		// Only write to sink until durableCount has been reached
 		if count >= s.durableEventCount {

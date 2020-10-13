@@ -95,7 +95,7 @@ OUTER:
 			}
 
 			// ignore heartbeat
-			if msg.Event == stream.NDJsonHeartbeat {
+			if msg.Event == stream.JsonHeartbeat {
 				continue
 			}
 
@@ -129,6 +129,7 @@ func TestEventStream_StreamErr(t *testing.T) {
 
 	s1, cleanupS1 := TestServer(t, func(c *Config) {
 		c.EnableEventBroker = true
+		c.EnableDebug = true
 	})
 	defer cleanupS1()
 
@@ -282,7 +283,7 @@ OUTER:
 				t.Fatalf("Got error: %v", msg.Error.Error())
 			}
 
-			if msg.Event == stream.NDJsonHeartbeat {
+			if msg.Event == stream.JsonHeartbeat {
 				continue
 			}
 

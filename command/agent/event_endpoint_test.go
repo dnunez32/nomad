@@ -71,6 +71,8 @@ func TestEventStream_NamespaceQuery(t *testing.T) {
 
 	httpTest(t, nil, func(s *TestAgent) {
 		ctx, cancel := context.WithCancel(context.Background())
+		defer cancel()
+
 		req, err := http.NewRequestWithContext(ctx, "GET", "/v1/event/stream?namespace=foo", nil)
 		require.Nil(t, err)
 		resp := httptest.NewRecorder()
@@ -101,7 +103,6 @@ func TestEventStream_NamespaceQuery(t *testing.T) {
 
 			return false, fmt.Errorf("missing expected json, got: %v, want: %v", got, want)
 		}, func(err error) {
-			cancel()
 			require.Fail(t, err.Error())
 		})
 
