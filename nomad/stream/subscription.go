@@ -9,7 +9,6 @@ import (
 )
 
 const (
-	AllKeys = "*"
 	// subscriptionStateOpen is the default state of a subscription. An open
 	// subscription may receive new events.
 	subscriptionStateOpen uint32 = 0
@@ -130,11 +129,11 @@ func filter(req *SubscribeRequest, events []structs.Event) []structs.Event {
 
 	var count int
 	for _, e := range events {
-		_, allTopics := req.Topics[AllKeys]
+		_, allTopics := req.Topics[structs.TopicAll]
 		if _, ok := req.Topics[e.Topic]; ok || allTopics {
 			var keys []string
 			if allTopics {
-				keys = req.Topics[AllKeys]
+				keys = req.Topics[structs.TopicAll]
 			} else {
 				keys = req.Topics[e.Topic]
 			}
@@ -142,9 +141,7 @@ func filter(req *SubscribeRequest, events []structs.Event) []structs.Event {
 				continue
 			}
 			for _, k := range keys {
-				// if req.Namespace != "" && e.Namespace != "" && e.Namespace ==
-				// if e.Namespace != "" && e.Namespace
-				if e.Key == k || k == AllKeys || filterKeyContains(e.FilterKeys, k) {
+				if e.Key == k || k == string(structs.TopicAll) || filterKeyContains(e.FilterKeys, k) {
 					count++
 				}
 			}
@@ -162,11 +159,11 @@ func filter(req *SubscribeRequest, events []structs.Event) []structs.Event {
 	// Return filtered events
 	result := make([]structs.Event, 0, count)
 	for _, e := range events {
-		_, allTopics := req.Topics[AllKeys]
+		_, allTopics := req.Topics[structs.TopicAll]
 		if _, ok := req.Topics[e.Topic]; ok || allTopics {
 			var keys []string
 			if allTopics {
-				keys = req.Topics[AllKeys]
+				keys = req.Topics[structs.TopicAll]
 			} else {
 				keys = req.Topics[e.Topic]
 			}
@@ -175,7 +172,7 @@ func filter(req *SubscribeRequest, events []structs.Event) []structs.Event {
 				continue
 			}
 			for _, k := range keys {
-				if e.Key == k || k == AllKeys || filterKeyContains(e.FilterKeys, k) {
+				if e.Key == k || k == string(structs.TopicAll) || filterKeyContains(e.FilterKeys, k) {
 					result = append(result, e)
 				}
 			}

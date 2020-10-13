@@ -212,9 +212,9 @@ func TestGenericEventsFromChanges_DeploymentAllocHealthRequestType(t *testing.T)
 	var allocEvents []structs.Event
 	var deploymentEvent []structs.Event
 	for _, e := range events {
-		if e.Topic == TopicAlloc {
+		if e.Topic == structs.TopicAlloc {
 			allocEvents = append(allocEvents, e)
-		} else if e.Topic == TopicDeployment {
+		} else if e.Topic == structs.TopicDeployment {
 			deploymentEvent = append(deploymentEvent, e)
 		}
 	}
@@ -223,14 +223,14 @@ func TestGenericEventsFromChanges_DeploymentAllocHealthRequestType(t *testing.T)
 	for _, e := range allocEvents {
 		require.Equal(t, 100, int(e.Index))
 		require.Equal(t, TypeDeploymentAllocHealth, e.Type)
-		require.Equal(t, TopicAlloc, e.Topic)
+		require.Equal(t, structs.TopicAlloc, e.Topic)
 	}
 
 	require.Len(t, deploymentEvent, 1)
 	for _, e := range deploymentEvent {
 		require.Equal(t, 100, int(e.Index))
 		require.Equal(t, TypeDeploymentAllocHealth, e.Type)
-		require.Equal(t, TopicDeployment, e.Topic)
+		require.Equal(t, structs.TopicDeployment, e.Topic)
 		require.Equal(t, d.ID, e.Key)
 	}
 }
@@ -268,7 +268,7 @@ func TestGenericEventsFromChanges_UpsertNodeEventsType(t *testing.T) {
 	require.Len(t, events, 2)
 
 	for _, e := range events {
-		require.Equal(t, TopicNode, e.Topic)
+		require.Equal(t, structs.TopicNode, e.Topic)
 		require.Equal(t, TypeNodeEvent, e.Type)
 		event := e.Payload.(*NodeEvent)
 		require.Equal(t, "update", event.Node.Events[len(event.Node.Events)-1].Message)
@@ -300,7 +300,7 @@ func TestGenericEventsFromChanges_NodeUpdateStatusRequest(t *testing.T) {
 	require.Len(t, events, 1)
 
 	e := events[0]
-	require.Equal(t, TopicNode, e.Topic)
+	require.Equal(t, structs.TopicNode, e.Topic)
 	require.Equal(t, TypeNodeEvent, e.Type)
 	event := e.Payload.(*NodeEvent)
 	require.Equal(t, "down", event.Node.Events[len(event.Node.Events)-1].Message)
@@ -333,7 +333,7 @@ func TestGenericEventsFromChanges_EvalUpdateRequestType(t *testing.T) {
 	require.Len(t, events, 1)
 
 	e := events[0]
-	require.Equal(t, TopicEval, e.Topic)
+	require.Equal(t, structs.TopicEval, e.Topic)
 	require.Equal(t, TypeEvalUpdated, e.Type)
 	event := e.Payload.(*EvalEvent)
 	require.Equal(t, "blocked", event.Eval.Status)
@@ -383,13 +383,13 @@ func TestGenericEventsFromChanges_ApplyPlanResultsRequestType(t *testing.T) {
 	var jobs []structs.Event
 	var deploys []structs.Event
 	for _, e := range events {
-		if e.Topic == TopicAlloc {
+		if e.Topic == structs.TopicAlloc {
 			allocs = append(allocs, e)
-		} else if e.Topic == TopicEval {
+		} else if e.Topic == structs.TopicEval {
 			evals = append(evals, e)
-		} else if e.Topic == TopicJob {
+		} else if e.Topic == structs.TopicJob {
 			jobs = append(jobs, e)
-		} else if e.Topic == TopicDeployment {
+		} else if e.Topic == structs.TopicDeployment {
 			deploys = append(deploys, e)
 		}
 		require.Equal(t, TypePlanResult, e.Type)
@@ -449,7 +449,7 @@ func TestGenericEventsFromChanges_BatchNodeUpdateDrainRequestType(t *testing.T) 
 	for _, e := range events {
 		require.Equal(t, 100, int(e.Index))
 		require.Equal(t, TypeNodeDrain, e.Type)
-		require.Equal(t, TopicNode, e.Topic)
+		require.Equal(t, structs.TopicNode, e.Topic)
 		ne := e.Payload.(*NodeEvent)
 		require.Equal(t, event.Message, ne.Node.Events[len(ne.Node.Events)-1].Message)
 	}
@@ -488,7 +488,7 @@ func TestGenericEventsFromChanges_NodeUpdateEligibilityRequestType(t *testing.T)
 	for _, e := range events {
 		require.Equal(t, 100, int(e.Index))
 		require.Equal(t, TypeNodeDrain, e.Type)
-		require.Equal(t, TopicNode, e.Topic)
+		require.Equal(t, structs.TopicNode, e.Topic)
 		ne := e.Payload.(*NodeEvent)
 		require.Equal(t, event.Message, ne.Node.Events[len(ne.Node.Events)-1].Message)
 		require.Equal(t, structs.NodeSchedulingIneligible, ne.Node.SchedulingEligibility)
@@ -534,9 +534,9 @@ func TestGenericEventsFromChanges_AllocUpdateDesiredTransitionRequestType(t *tes
 	var allocs []structs.Event
 	var evalEvents []structs.Event
 	for _, e := range events {
-		if e.Topic == TopicEval {
+		if e.Topic == structs.TopicEval {
 			evalEvents = append(evalEvents, e)
-		} else if e.Topic == TopicAlloc {
+		} else if e.Topic == structs.TopicAlloc {
 			allocs = append(allocs, e)
 		} else {
 			require.Fail(t, "unexpected event type")

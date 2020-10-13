@@ -7,12 +7,6 @@ import (
 )
 
 const (
-	TopicDeployment structs.Topic = "Deployment"
-	TopicEval       structs.Topic = "Eval"
-	TopicAlloc      structs.Topic = "Alloc"
-	TopicJob        structs.Topic = "Job"
-	TopicNode       structs.Topic = "Node"
-
 	TypeNodeRegistration         = "NodeRegistration"
 	TypeNodeDeregistration       = "NodeDeregistration"
 	TypeNodeEligibilityUpdate    = "NodeEligibility"
@@ -130,7 +124,7 @@ func GenericEventsFromChanges(tx ReadTxn, changes Changes) (*structs.Events, err
 			}
 
 			event := structs.Event{
-				Topic:     TopicEval,
+				Topic:     structs.TopicEval,
 				Type:      eventType,
 				Index:     changes.Index,
 				Key:       after.ID,
@@ -162,7 +156,7 @@ func GenericEventsFromChanges(tx ReadTxn, changes Changes) (*structs.Events, err
 			alloc.Job = nil
 
 			event := structs.Event{
-				Topic:      TopicAlloc,
+				Topic:      structs.TopicAlloc,
 				Type:       eventType,
 				Index:      changes.Index,
 				Key:        after.ID,
@@ -184,7 +178,7 @@ func GenericEventsFromChanges(tx ReadTxn, changes Changes) (*structs.Events, err
 			}
 
 			event := structs.Event{
-				Topic:     TopicJob,
+				Topic:     structs.TopicJob,
 				Type:      eventType,
 				Index:     changes.Index,
 				Key:       after.ID,
@@ -205,7 +199,7 @@ func GenericEventsFromChanges(tx ReadTxn, changes Changes) (*structs.Events, err
 			}
 
 			event := structs.Event{
-				Topic: TopicNode,
+				Topic: structs.TopicNode,
 				Type:  eventType,
 				Index: changes.Index,
 				Key:   after.ID,
@@ -224,7 +218,7 @@ func GenericEventsFromChanges(tx ReadTxn, changes Changes) (*structs.Events, err
 			}
 
 			event := structs.Event{
-				Topic:      TopicDeployment,
+				Topic:      structs.TopicDeployment,
 				Type:       eventType,
 				Index:      changes.Index,
 				Key:        after.ID,

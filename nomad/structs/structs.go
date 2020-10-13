@@ -10736,6 +10736,15 @@ func (r *RpcError) Error() string {
 
 type Topic string
 
+const (
+	TopicDeployment Topic = "Deployment"
+	TopicEval       Topic = "Eval"
+	TopicAlloc      Topic = "Alloc"
+	TopicJob        Topic = "Job"
+	TopicNode       Topic = "Node"
+	TopicAll        Topic = "*"
+)
+
 // Event represents a change in Nomads state.
 type Event struct {
 	// Topic represeents the primary object for the event

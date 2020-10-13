@@ -2,10 +2,12 @@ package nomad
 
 import (
 	"context"
+	"fmt"
 	"io"
 	"time"
 
 	"github.com/hashicorp/go-msgpack/codec"
+	"github.com/hashicorp/nomad/acl"
 	"github.com/hashicorp/nomad/helper"
 	"github.com/hashicorp/nomad/helper/uuid"
 	"github.com/hashicorp/nomad/nomad/stream"
@@ -41,16 +43,13 @@ func (e *Event) stream(conn io.ReadWriteCloser) {
 		return
 	}
 
-	// ACL check
-	// TODO(drew) ACL checks need to be per topic
-	// All Events        Management
-	// System Events     Management
-	// Node Events       NamespaceCapabilityReadEvents
-	// Job/Alloc Events  NamespaceCapabilityReadEvents
-	if aclObj, err := e.srv.ResolveToken(args.AuthToken); err != nil {
+	aclObj, err := e.srv.ResolveToken(args.AuthToken)
+	if err != nil {
 		handleJsonResultError(err, nil, encoder)
 		return
-	} else if aclObj != nil && !aclObj.IsManagement() {
+	}
+	// If ACLs are disabled, EnableDebug must be enabled
+	if aclObj == nil && !e.srv.config.EnableDebug {
 		handleJsonResultError(structs.ErrPermissionDenied, helper.Int64ToPtr(403), encoder)
 		return
 	}
@@ -69,6 +68,16 @@ func (e *Event) stream(conn io.ReadWriteCloser) {
 		Index:     uint64(args.Index),
 		Namespace: args.Namespace,
 	}
+
+	// Check required ACL permissions for requested Topics
+	if aclObj != nil {
+		if err := aclCheckForEvents(subReq, aclObj); err != nil {
+			handleJsonResultError(structs.ErrPermissionDenied, helper.Int64ToPtr(403), encoder)
+			return
+		}
+	}
+
+	// Get the servers broker and subscribe
 	publisher, err := e.srv.State().EventBroker()
 	if err != nil {
 		handleJsonResultError(err, helper.Int64ToPtr(500), encoder)
@@ -213,4 +222,48 @@ func handleJsonResultError(err error, code *int64, encoder *codec.Encoder) {
 	encoder.Encode(&structs.EventStreamWrapper{
 		Error: structs.NewRpcError(err, code),
 	})
+}
+
+func aclCheckForEvents(subReq *stream.SubscribeRequest, aclObj *acl.ACL) error {
+	if len(subReq.Topics) == 0 {
+		return fmt.Errorf("invalid topic request")
+	}
+
+	reqPolicies := make(map[string]struct{})
+	var required = struct{}{}
+
+	for topic := range subReq.Topics {
+		switch topic {
+		case structs.TopicDeployment, structs.TopicEval,
+			structs.TopicAlloc, structs.TopicJob:
+			if _, ok := reqPolicies[acl.NamespaceCapabilityReadJob]; !ok {
+				reqPolicies[acl.NamespaceCapabilityReadJob] = required
+			}
+		case structs.TopicNode:
+			reqPolicies["node-read"] = required
+		case structs.TopicAll:
+			reqPolicies["management"] = required
+		default:
+			return fmt.Errorf("unknown topic %s", topic)
+		}
+	}
+
+	for checks := range reqPolicies {
+		switch checks {
+		case acl.NamespaceCapabilityReadJob:
+			if ok := aclObj.AllowNsOp(subReq.Namespace, acl.NamespaceCapabilityReadJob); !ok {
+				return structs.ErrPermissionDenied
+			}
+		case "node-read":
+			if ok := aclObj.AllowNodeRead(); !ok {
+				return structs.ErrPermissionDenied
+			}
+		case "management":
+			if ok := aclObj.IsManagement(); !ok {
+				return structs.ErrPermissionDenied
+			}
+		}
+	}
+
+	return nil
 }
