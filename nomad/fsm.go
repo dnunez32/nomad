@@ -1526,6 +1526,12 @@ func (n *nomadFSM) Restore(old io.ReadCloser) error {
 				return err
 			}
 		case EventSnapshot:
+			// If the event broker is disabled but the snapshot from potentially
+			// a remote server has events, ignore them
+			if !n.config.EnableEventBroker {
+				return nil
+			}
+
 			event := new(structs.Events)
 			if err := dec.Decode(event); err != nil {
 				return err
